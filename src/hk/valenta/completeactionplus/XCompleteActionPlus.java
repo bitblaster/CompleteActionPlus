@@ -84,6 +84,8 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookInitPackageResources, IXposedHookZygoteInit {
 
+	private static final boolean LG_G4 = true;
+
 	@Override
 	public void handleLoadPackage(LoadPackageParam lpparam) throws Throwable {
 		// hook own configuration method		
@@ -98,12 +100,14 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 			});
 		}
 		if (lpparam.packageName.equals("android")) {
+			XposedBridge.log("CAP: Beccato package android");
 			XposedHelpers.findAndHookMethod("com.android.server.pm.PackageManagerService", lpparam.classLoader, "queryIntentActivities", 
 					Intent.class, String.class, int.class, int.class, new XC_MethodHook() {
 				@SuppressLint("DefaultLocale")
 				@SuppressWarnings("unchecked")
 				@Override
 				protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+//					XposedBridge.log("CAP: 108");
 					// let's get intent
 					Intent myIntent = (Intent)param.args[0];
 					if (myIntent == null) return;
@@ -256,6 +260,7 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 				@SuppressWarnings("unchecked")
 				@Override
 				protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+//					XposedBridge.log("CAP: 261");
 					// our custom flag?
 					int flags = (Integer)param.args[1];
 					if ((flags&0x00002000) != 0 && param.getResult() != null) {
@@ -343,10 +348,12 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 	@SuppressLint("DefaultLocale")
 	@Override
 	public void initZygote(StartupParam startupParam) throws Throwable {
-		XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivity", null, "onItemClick", AdapterView.class, View.class, int.class, long.class,
+		XposedBridge.log("CAP: initZygote");
+		XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivityEx", null, "onItemClick", AdapterView.class, View.class, int.class, long.class,
 				new XC_MethodReplacement() {
 			@Override
 			protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+				XposedBridge.log("CAP: 354");
 				// invalid index?
 				int position = (Integer)param.args[2];
 				if (param.args[0] == null || position < 0) {
@@ -356,7 +363,7 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 				
 				// are we correct class?
 				Class<?> rObject = param.thisObject.getClass();
-				while (!rObject.getName().equals("com.android.internal.app.ResolverActivity")) {
+				while (!rObject.getName().equals("com.android.internal.app.ResolverActivityEx")) {
 					rObject = rObject.getSuperclass();
 				}
 
@@ -437,12 +444,13 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 				return null;
 			}
 		});
-		XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivity", null, "onButtonClick", View.class, new XC_MethodReplacement() {
+		XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivityEx", null, "onButtonClick", View.class, new XC_MethodReplacement() {
 			@Override
 			protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+				XposedBridge.log("CAP: 448");
 				// call next step
 				Class<?> rObject = param.thisObject.getClass();
-				while (!rObject.getName().equals("com.android.internal.app.ResolverActivity")) {
+				while (!rObject.getName().equals("com.android.internal.app.ResolverActivityEx")) {
 					rObject = rObject.getSuperclass();
 				}
 				
@@ -593,6 +601,7 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 
 				@Override
 				public void onTick(long millisUntilFinished) {
+					XposedBridge.log("CAP: 602");
 					// are we cancel?
 					if (this.progressBar.getVisibility() == View.GONE) {
 						// cancel
@@ -623,6 +632,7 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 					
 			@Override
 			protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+				XposedBridge.log("CAP: 633");
 				hookResolveAttribute = XposedHelpers.findAndHookMethod(Resources.Theme.class, "resolveAttribute", int.class, TypedValue.class, boolean.class, new XC_MethodReplacement() {
 					@Override
 					protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
@@ -658,6 +668,7 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 			@SuppressLint("RtlHardcoded")
 			@Override
 			protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+				XposedBridge.log("CAP: 669");
 				// do we hook theme?
 				if (hookResolveAttribute != null) {
 					hookResolveAttribute.unhook();
@@ -671,7 +682,7 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 				// are we correct class?
 				Class<?> rObject = param.thisObject.getClass();
 //				XposedBridge.log("Class: " + rObject.getName());
-				while (!rObject.getName().equals("com.android.internal.app.ResolverActivity")) {
+				while (!rObject.getName().equals("com.android.internal.app.ResolverActivityEx")) {
 					rObject = rObject.getSuperclass();
 				}
 				
@@ -969,16 +980,17 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 			}
 		};
 		if (Build.VERSION.SDK_INT > 19) {
-			XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivity", null, "onCreate", Bundle.class, Intent.class, 
+			XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivityEx", null, "onCreate", Bundle.class, Intent.class, 
 					CharSequence.class, int.class, Intent[].class, List.class, boolean.class, onCreate);
 		} else {
-			XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivity", null, "onCreate", Bundle.class, Intent.class, 
+			XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivityEx", null, "onCreate", Bundle.class, Intent.class, 
 					CharSequence.class, Intent[].class, List.class, boolean.class, onCreate);
 		}
-		XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivity.ResolveListAdapter", null, "rebuildList", new XC_MethodHook() {
+		XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivityEx.ResolveListAdapter", null, "rebuildList", new XC_MethodHook() {
 			@SuppressWarnings("unchecked")
 			@Override
 			protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+				XposedBridge.log("CAP: 991");
 				// get current configuration
 				XSharedPreferences pref = new XSharedPreferences("hk.valenta.completeactionplus", "config");
 				boolean manageList = pref.getBoolean("ManageList", false);
@@ -1109,9 +1121,10 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 				}
 			}
 		});
-		XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivity.ResolveListAdapter", null, "getItem", int.class, new XC_MethodHook() {
+		XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivityEx.ResolveListAdapter", null, "getItem", int.class, new XC_MethodHook() {
 			@Override
 			protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+				XposedBridge.log("CAP: 1125");
 				// let's hack if position is -99
 				int position = (Integer)param.args[0];
 				if (position == -99) {
@@ -1121,10 +1134,11 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 			}			
 		});
 		try {
-		XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivity.ItemLongClickListener", null, "onItemLongClick",
+		XposedHelpers.findAndHookMethod("com.android.internal.app.ResolverActivityEx.ItemLongClickListener", null, "onItemLongClick",
 				AdapterView.class, View.class, int.class, long.class, new XC_MethodReplacement() {
 			@Override
-			protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {				
+			protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {		
+				XposedBridge.log("CAP: 1139");
 				// get parameters
 				AdapterView<?> parent = (AdapterView<?>)param.args[0];
 				int position = (Integer)param.args[2];
@@ -1206,11 +1220,11 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 
 	@Override
 	public void handleInitPackageResources(InitPackageResourcesParam resparam) throws Throwable {
-		
+//		XposedBridge.log("CAP: 1221");
 		boolean foundGrid = false;
 		boolean foundItems = false;
 		
-		try {
+		/*try {
 			// hook activity chooser
 			resparam.res.hookLayout("android", "layout", "resolver_grid", new XC_LayoutInflated() {
 				
@@ -1221,10 +1235,13 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 			});
 			foundGrid = true;
 		} catch (Exception e) {
+			XposedBridge.log("CAP: Err 1236. " + e.getMessage());
 			// not found
-		}
+		}*/
 		try {
 			// hook activity chooser
+			
+//			resparam.res.hookLayout(17367216, new XC_LayoutInflated() {
 			resparam.res.hookLayout("android", "layout", "resolver_list", new XC_LayoutInflated() {
 				
 				@Override
@@ -1234,9 +1251,10 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 			});
 			foundGrid = true;
 		} catch (Exception e) {
+			XposedBridge.log("CAP: Err 1249. " + e.getMessage());
 			// not found
 		}
-		try {
+		/*try {
 			// hook activity chooser
 			resparam.res.hookLayout("com.htc.framework", "layout", "resolveractivity_list", new XC_LayoutInflated() {
 				
@@ -1248,8 +1266,9 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 			foundGrid = true;
 		} catch (Exception e) {
 			// not found
-		}		
+		}	*/	
 		try {
+//			resparam.res.hookLayout(17367214, new XC_LayoutInflated() {
 			resparam.res.hookLayout("android", "layout", "resolve_list_item", new XC_LayoutInflated() {
 				
 				@Override
@@ -1259,9 +1278,10 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 			});
 			foundItems = true;
 		} catch (Exception e) {
+			XposedBridge.log("CAP: Err 1276. " + e.getMessage());
 			// not found
 		}
-		try {
+		/*try {
 			resparam.res.hookLayout("android", "layout", "resolve_grid_item", new XC_LayoutInflated() {
 				
 				@Override
@@ -1284,16 +1304,18 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 			foundItems = true;
 		} catch (Exception e) {
 			// not found
-		}
+		}*/
 		if (!foundGrid) {
 			XposedBridge.log("CAP: Grid/List resource not found.");
 		}
+		
 		if (!foundItems) {
 			XposedBridge.log("CAP: Grid/List item resource not found.");
 		}
 	}
 	
 	private void modifyLayout(LayoutInflatedParam liparam, String listName, boolean htc) {
+		XposedBridge.log("CAP: 1316");
 		// framework
 		String framework = htc ? "com.htc.framework" : "android";
 		
@@ -1677,6 +1699,7 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 	}
 	
 	private void changeItems(LayoutInflatedParam liparam, boolean htc) {
+		XposedBridge.log("CAP: 1700");
 		// framework
 		String framework = htc ? "com.htc.framework" : "android";
 		
@@ -2182,7 +2205,7 @@ public class XCompleteActionPlus implements IXposedHookLoadPackage, IXposedHookI
 		}
 		
 		try {
-			if (Build.VERSION.SDK_INT > 19) {
+			if (Build.VERSION.SDK_INT > 19 && !LG_G4) {
 				XposedHelpers.callMethod(thisObject, "startSelected", position, always, false);				
 			} else {
 				XposedHelpers.callMethod(thisObject, "startSelected", position, always);
